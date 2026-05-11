@@ -1,0 +1,182 @@
+[
+  {
+    "title": "[INFRA] Инициализация Turborepo monorepo",
+    "milestone": "MVP",
+    "labels": ["type:chore", "scope:infra", "priority:p0"],
+    "body": "## Описание\nНастроить Turborepo как основу монорепо. Это база — без неё ничего не работает.\n\n## Требования\n- Установить Turborepo, настроить `turbo.json` с пайплайнами `build`, `dev`, `lint`, `test`, `typecheck`\n- Настроить workspaces в `package.json` (apps/*, packages/*)\n- Bun как пакетный менеджер (`bun install`, `bunx`)\n- Создать пустые папки `apps/web`, `apps/mobile`, `apps/api`, `packages/ui`, `packages/types`, `packages/config`, `packages/db`, `packages/api-client`\n- Настроить `tsconfig.base.json` в корне с path-aliases для пакетов\n\n## Технические детали\n- `turbo.json` должен корректно описать зависимости между задачами (например, `build` пакетов перед `build` приложений)\n- Включить remote caching через Vercel (опционально, но желательно)\n- `.gitignore`: `node_modules`, `.turbo`, `.next`, `dist`, `.env*` (кроме `.env.example`)\n\n## Файлы для изменения\n- `package.json` (root)\n- `turbo.json`\n- `tsconfig.base.json`\n- `.gitignore`\n- `bun.lockb`\n\n## Критерии приёмки\n- [ ] `bun install` отрабатывает без ошибок\n- [ ] `bunx turbo run build` запускается (даже если ничего не собирает пока)\n- [ ] Workspaces видны через `bun pm ls`"
+  },
+  {
+    "title": "[INFRA] Настройка ESLint, Prettier, Husky, lint-staged",
+    "milestone": "MVP",
+    "labels": ["type:chore", "scope:infra", "priority:p0"],
+    "body": "## Описание\nЕдиная стилистика кода и pre-commit hooks. Без этого код будет разъезжаться.\n\n## Требования\n- ESLint flat config (`eslint.config.js`) в `packages/config`\n- Отдельные пресеты: `base`, `nextjs`, `react-native`, `nest`\n- Prettier с конфигом в `packages/config`\n- Husky + lint-staged: на pre-commit запускать `eslint --fix` и `prettier --write` только на изменённых файлах\n- commitlint с conventional commits (feat:, fix:, chore:, docs:, refactor:, test:)\n\n## Технические детали\n- Использовать `@typescript-eslint`, `eslint-plugin-import`, `eslint-plugin-unused-imports`\n- Для Next.js: `eslint-config-next`\n- Для NestJS: `@typescript-eslint/recommended`\n- Конфиги переиспользуются: каждое приложение делает `import baseConfig from '@swift/config/eslint'`\n\n## Файлы для изменения\n- `packages/config/eslint/*.js`\n- `packages/config/prettier.json`\n- `.husky/pre-commit`, `.husky/commit-msg`\n- `commitlint.config.js`\n\n## Критерии приёмки\n- [ ] При коммите автоматически прогоняется lint-staged\n- [ ] Коммит с неконвенциональным сообщением блокируется\n- [ ] `bun run lint` работает во всех приложениях"
+  },
+  {
+    "title": "[INFRA] Docker Compose для локальной разработки",
+    "milestone": "MVP",
+    "labels": ["type:chore", "scope:infra", "priority:p0"],
+    "body": "## Описание\nЛокальное окружение должно подниматься одной командой `docker compose up`.\n\n## Требования\n- PostgreSQL 16 (порт 5432)\n- Redis 7 (порт 6379)\n- MinIO для S3-совместимого хранилища файлов (порт 9000, 9001 для UI)\n- pgAdmin (опционально, порт 5050)\n- Volumes для persist данных между перезапусками\n- Health checks на всех сервисах\n\n## Технические детали\n- `docker-compose.yml` в корне\n- `.env.example` со всеми нужными переменными окружения\n- Сетевая изоляция: все сервисы в одной сети `swift-network`\n- Postgres: создать отдельный init-скрипт для extensions (`uuid-ossp`, `pg_trgm` для full-text search)\n\n## Критерии приёмки\n- [ ] `docker compose up -d` поднимает все сервисы\n- [ ] `docker compose ps` показывает все services как healthy\n- [ ] Postgres доступен по `localhost:5432` с креденшелами из `.env.example`"
+  },
+  {
+    "title": "[INFRA] CI/CD: GitHub Actions workflow",
+    "milestone": "MVP",
+    "labels": ["type:chore", "scope:infra", "priority:p0"],
+    "body": "## Описание\nАвтоматический lint + typecheck + tests + build на каждый PR.\n\n## Требования\n- Workflow `.github/workflows/ci.yml`\n- Запускается на pull_request в `main` и `dev`, push в `main` и `dev`\n- Параллельные jobs: lint-and-typecheck, test, build, e2e (только на push)\n- Postgres + Redis как services для интеграционных тестов\n- Cancel concurrent runs (экономия минут)\n- Branch protection rules: нельзя смержить в `main`/`dev` без зелёного CI\n\n## Файлы для изменения\n- `.github/workflows/ci.yml`\n- `.github/workflows/deploy-staging.yml` (опционально на этом этапе)\n\n## Критерии приёмки\n- [ ] CI запускается на каждом PR\n- [ ] Зелёный CI на демо-PR\n- [ ] Branch protection включён на `main` и `dev`"
+  },
+  {
+    "title": "[DOCS] Базовая документация: README, CONTRIBUTING, ADR-001",
+    "milestone": "MVP",
+    "labels": ["type:docs", "scope:infra", "priority:p1"],
+    "body": "## Описание\nНаписать базовую документацию проекта. Без README никто не разберётся как запустить.\n\n## Требования\n- `README.md`: описание, стек, установка, запуск, структура монорепо\n- `CONTRIBUTING.md`: как делать PR, naming веток, conventional commits\n- `docs/adr/0001-monorepo-structure.md` — почему Turborepo, почему такая структура\n- `docs/adr/template.md` — шаблон для новых ADR\n\n## Технические детали\n- ADR (Architecture Decision Record) — это короткий документ (1-2 страницы), фиксирующий архитектурное решение и его контекст. Формат: Status / Context / Decision / Consequences\n- README с бэйджами (CI status, version, license)\n\n## Критерии приёмки\n- [ ] Любой новый разработчик может запустить проект по README за 10 минут\n- [ ] CONTRIBUTING описывает workflow веток и PR"
+  },
+  {
+    "title": "[DB] Базовая Prisma schema: User, Workspace, Member",
+    "milestone": "MVP",
+    "labels": ["type:feature", "scope:db", "priority:p0"],
+    "body": "## Описание\nПервая итерация схемы БД: пользователи и многопользовательские workspaces (для multi-tenancy).\n\n## Требования\n- Модель `User`: id (uuid), email (unique), passwordHash, name, avatarUrl, createdAt, updatedAt\n- Модель `Workspace`: id, name, slug (unique), ownerId, createdAt\n- Модель `Member` (связь many-to-many с ролью): userId, workspaceId, role (enum: OWNER, ADMIN, MEMBER, VIEWER)\n- Уникальный индекс `(userId, workspaceId)` на Member\n- Soft delete pattern: добавить `deletedAt` где это имеет смысл\n\n## Технические детали\n- Использовать `cuid()` или `uuid()` для id (cuid короче, uuid более стандартен — выбрать в ADR)\n- Подключить Prisma Client в `packages/db/src/index.ts` как singleton\n- Создать первую миграцию: `bunx prisma migrate dev --name init`\n- Seed-скрипт с тестовыми данными в `packages/db/prisma/seed.ts`\n\n## Критерии приёмки\n- [ ] Миграция применяется без ошибок\n- [ ] `bunx prisma studio` показывает таблицы\n- [ ] Seed создаёт тестового user + workspace"
+  },
+  {
+    "title": "[DB] Schema: Board, Column, Card, Tag",
+    "milestone": "MVP",
+    "labels": ["type:feature", "scope:db", "priority:p0"],
+    "body": "## Описание\nСхема для канбан-доски — ядро продукта.\n\n## Требования\n- `Board`: id, workspaceId, name, description, coverColor, position, archivedAt\n- `Column`: id, boardId, name, position (для сортировки), color\n- `Card`: id, columnId, title, description (rich text), position, dueDate, priority (enum), assigneeId, createdById, archivedAt\n- `Tag`: id, boardId, name, color\n- `CardTag`: many-to-many связь Card ↔ Tag\n- `Comment`: id, cardId, authorId, content, createdAt, updatedAt\n- `Attachment`: id, cardId, url, filename, size, mimeType, uploadedById\n\n## Технические детали\n- **Position как float**: позволяет вставлять между двумя карточками без перенумерации (1.0, 2.0, 1.5). Алгоритм: новая позиция = (prev + next) / 2. Когда float теряет точность — делать rebalance.\n- **Альтернатива**: использовать lexicographic ordering (LexoRank как в Jira). Сложнее, но не имеет проблемы с точностью. Описать выбор в ADR.\n- Cascade delete: удаление Board → удаление Columns → удаление Cards\n- Индексы: `(columnId, position)` для быстрой сортировки внутри колонки\n\n## Критерии приёмки\n- [ ] Миграция применяется\n- [ ] Можно создать board → column → card через Prisma Studio\n- [ ] ADR-002 объясняет выбор стратегии для position"
+  },
+  {
+    "title": "[API] NestJS: bootstrap проекта с базовой структурой",
+    "milestone": "MVP",
+    "labels": ["type:feature", "scope:api", "priority:p0"],
+    "body": "## Описание\nЗапустить пустой NestJS внутри `apps/api` с правильной модульной структурой.\n\n## Требования\n- Структура: `src/modules/<feature>/` — в каждом модуле controller, service, dto, entities\n- `ConfigModule` с валидацией env через Zod (или class-validator)\n- Глобальный `ValidationPipe` с whitelist + transform\n- Глобальный exception filter (форматирование ошибок: { code, message, details })\n- Логгер через Pino (быстрее winston, лучше структура)\n- Swagger на `/api/docs` с автогенерацией из DTO\n- Health check эндпоинт `/health` (проверка БД + Redis)\n\n## Технические детали\n- Используем декораторы NestJS, никаких самописных middleware где можно обойтись\n- DTO через `class-validator` + `class-transformer`\n- В Swagger включить `@ApiBearerAuth()` для будущих защищённых эндпоинтов\n\n## Критерии приёмки\n- [ ] `bun run dev:api` запускает сервер на порту 3001\n- [ ] `/api/docs` показывает Swagger UI\n- [ ] `/health` возвращает 200 если БД и Redis доступны"
+  },
+  {
+    "title": "[API] Auth: регистрация, логин, JWT (access + refresh)",
+    "milestone": "MVP",
+    "labels": ["type:feature", "scope:api", "priority:p0", "security"],
+    "body": "## Описание\nПолноценная JWT-аутентификация с refresh-токенами.\n\n## Требования\n- `POST /auth/register` — email, password, name → создание User\n- `POST /auth/login` → access token (15 мин) + refresh token (30 дней)\n- `POST /auth/refresh` — обновление access по refresh\n- `POST /auth/logout` — инвалидация refresh\n- `GET /auth/me` — текущий пользователь\n- Хеширование паролей через `argon2` (НЕ bcrypt — argon2 современнее, выиграл Password Hashing Competition)\n- Rate limiting на /auth/login (5 попыток/15 мин через `@nestjs/throttler`)\n\n## Технические детали\n- **Стратегия хранения токенов** (важный архитектурный выбор):\n  - Access token: возвращается в JSON (фронт хранит в памяти Zustand)\n  - Refresh token: **httpOnly + Secure + SameSite=Strict cookie** — недоступен из JS, защита от XSS\n- Refresh token: хранить в Redis с TTL 30 дней, ключ `refresh:{userId}:{jti}`. Это даёт возможность инвалидации (logout, смена пароля).\n- Refresh token rotation: при использовании refresh — старый удаляется, выдаётся новый. Если приходит уже использованный refresh → security incident, инвалидируем все сессии user.\n- JWT payload: { sub: userId, email, iat, exp, jti }\n- Использовать `passport-jwt` + custom strategy\n\n## Критерии приёмки\n- [ ] Регистрация создаёт пользователя с захешированным паролем\n- [ ] Login возвращает токены\n- [ ] Refresh работает, старый refresh инвалидируется\n- [ ] Logout очищает Redis и cookie\n- [ ] Покрытие unit-тестами критичной логики"
+  },
+  {
+    "title": "[API] RBAC: Guards для проверки ролей в Workspace",
+    "milestone": "MVP",
+    "labels": ["type:feature", "scope:api", "priority:p1", "security"],
+    "body": "## Описание\nКонтроль доступа на уровне ролей в workspace.\n\n## Требования\n- Custom decorator `@RequireRole(Role.ADMIN)`\n- Guard, который из request достаёт workspaceId (из URL params), userId (из JWT), и проверяет Member.role\n- Композиция guards: `JwtAuthGuard` → `WorkspaceMemberGuard` → `RoleGuard`\n- Кэшировать роли в Redis на короткое время (60 секунд) — снизит нагрузку на БД\n\n## Технические детали\n- Иерархия ролей: OWNER > ADMIN > MEMBER > VIEWER. Если нужна роль ADMIN — OWNER тоже подходит.\n- Использовать `Reflector` для чтения метаданных из декоратора\n\n## Критерии приёмки\n- [ ] Эндпоинт с `@RequireRole(Role.ADMIN)` отдаёт 403 для MEMBER\n- [ ] Тесты на каждую роль"
+  },
+  {
+    "title": "[API] CRUD для Workspaces, Members (приглашения)",
+    "milestone": "MVP",
+    "labels": ["type:feature", "scope:api", "priority:p1"],
+    "body": "## Описание\nУправление workspace и приглашение участников.\n\n## Требования\n- `POST /workspaces` — создать (creator становится OWNER)\n- `GET /workspaces` — список workspace текущего пользователя\n- `PATCH /workspaces/:id`, `DELETE /workspaces/:id`\n- `POST /workspaces/:id/invitations` — отправить приглашение по email\n- `POST /invitations/:token/accept` — принять приглашение\n- `DELETE /workspaces/:id/members/:userId` — удалить участника\n- `PATCH /workspaces/:id/members/:userId` — изменить роль\n\n## Технические детали\n- Invitation token: подписанный JWT с TTL 7 дней (workspaceId, email, role)\n- Email отправка через `@nestjs-modules/mailer` + Mailhog в dev / Resend в prod\n- Только OWNER может удалять workspace\n- Нельзя удалить последнего OWNER\n\n## Критерии приёмки\n- [ ] Все CRUD работают\n- [ ] Email с приглашением отправляется (виден в Mailhog)\n- [ ] e2e-тест полного flow: create → invite → accept → list members"
+  },
+  {
+    "title": "[API] CRUD для Boards, Columns, Cards",
+    "milestone": "MVP",
+    "labels": ["type:feature", "scope:api", "priority:p0"],
+    "body": "## Описание\nЯдро API: канбан-доски.\n\n## Требования\n- Boards: GET list (по workspace), GET one, POST, PATCH, DELETE, POST archive/unarchive\n- Columns: POST, PATCH, DELETE, PATCH /reorder (массовое обновление порядка)\n- Cards: POST, GET one, PATCH, DELETE, POST /move (с columnId + position), POST archive\n\n## Технические детали\n- **Move card** — самый сложный эндпоинт:\n  - Body: `{ targetColumnId, targetPosition }`\n  - Сервер вычисляет новую `position` (between prev и next)\n  - При rebalance (когда позиции слишком близки): пересчитать все позиции в колонке транзакцией\n  - Вернуть обновлённую карточку\n- Все эндпоинты — внутри `/workspaces/:wsId/boards/...` для естественной авторизации через WorkspaceMemberGuard\n- Pagination через cursor (id + createdAt) для списков карточек\n\n## Критерии приёмки\n- [ ] Все CRUD работают и покрыты тестами\n- [ ] Move card корректно вычисляет position\n- [ ] Rebalance срабатывает когда позиции < 0.0001 друг от друга"
+  },
+  {
+    "title": "[API] WebSocket Gateway для real-time обновлений канбана",
+    "milestone": "v1.0",
+    "labels": ["type:feature", "scope:api", "priority:p1"],
+    "body": "## Описание\nКогда один пользователь двигает карточку — другие видят это в реальном времени.\n\n## Требования\n- NestJS Gateway на Socket.io (transport: websocket only, без polling)\n- Аутентификация при коннекте через JWT (handshake.auth.token)\n- Rooms: `board:{boardId}` — клиент подписывается на конкретную доску\n- Events:\n  - `card:created`, `card:updated`, `card:moved`, `card:deleted`\n  - `column:created`, `column:updated`, `column:deleted`\n  - `presence:join`, `presence:leave` (кто сейчас смотрит доску)\n\n## Технические детали\n- **Redis adapter** обязателен: `@socket.io/redis-adapter`. Без него при масштабировании на N инстансов сообщения не доходят до клиентов на других инстансах.\n- При HTTP-мутации (PATCH card) сервис эмитит событие в Gateway → broadcast в room\n- Архитектурно: бизнес-логика в service, gateway только транспорт. Не складывать логику в gateway.\n- Throttling presence-событий (debounce 500мс) чтобы не флудить\n\n## Критерии приёмки\n- [ ] При перемещении карточки в одной вкладке — обновление в другой за <200мс\n- [ ] Отключение клиента корректно убирает его из presence\n- [ ] Покрытие e2e-тестами через два socket-клиента"
+  },
+  {
+    "title": "[WEB] Next.js: bootstrap с App Router и базовым layout",
+    "milestone": "MVP",
+    "labels": ["type:feature", "scope:web", "priority:p0"],
+    "body": "## Описание\nЗапустить Next.js 15 (App Router) внутри `apps/web` с базовой структурой.\n\n## Требования\n- App Router (`app/` директория)\n- Server Components по умолчанию, `'use client'` только где нужно\n- TailwindCSS с конфигом из `packages/config/tailwind`\n- Глобальный layout с провайдерами: ThemeProvider, QueryClientProvider (TanStack Query), Toaster (Sonner)\n- Структура папок: `app/(auth)/`, `app/(dashboard)/`, `app/api/` (для health и proxy если нужно)\n\n## Технические детали\n- `next.config.js`: `transpilePackages: ['@swift/ui', '@swift/types']`\n- Использовать `next/font` для шрифтов (Inter / Geist)\n- Image optimization настроен с allowlist доменов\n\n## Критерии приёмки\n- [ ] `bun run dev:web` запускает на :3000\n- [ ] Базовая страница рендерится\n- [ ] Tailwind работает"
+  },
+  {
+    "title": "[WEB] Auth UI: страницы login/register с glass-эффектом",
+    "milestone": "MVP",
+    "labels": ["type:feature", "scope:web", "priority:p0"],
+    "body": "## Описание\nКрасивые страницы входа/регистрации в стилистике glass + небесные тона.\n\n## Требования\n- Страницы: `/login`, `/register`, `/forgot-password`\n- Glass card в центре экрана: `backdrop-blur-xl bg-white/10 border border-white/20`\n- Background: gradient небесных тонов с анимированными blur-blobs\n- Валидация формы через react-hook-form + zod\n- Обработка ошибок с приятной анимацией (shake)\n- Loading state на кнопках\n\n## Технические детали\n- Цветовая палитра в `tailwind.config.ts`: sky-50 до sky-700, slate, off-white\n- Компоненты `<GlassCard>`, `<GlassInput>`, `<GlassButton>` — переиспользуемые в `packages/ui`\n- На бэкенде blob-blur — три абсолютно позиционированных div с `blur-3xl` и анимацией `animate-blob`\n- Для accessibility: focus-visible ring обязательно, ARIA-атрибуты на полях\n\n## Критерии приёмки\n- [ ] Дизайн соответствует референсу (glass + blur + sky tones)\n- [ ] Валидация работает (required, email format, password length)\n- [ ] Lighthouse Accessibility ≥ 95"
+  },
+  {
+    "title": "[WEB] Zustand store для auth + httpOnly cookie integration",
+    "milestone": "MVP",
+    "labels": ["type:feature", "scope:web", "priority:p0"],
+    "body": "## Описание\nХранение auth-состояния на фронте.\n\n## Требования\n- Zustand store: { user, accessToken, isAuthenticated, login(), logout(), refresh() }\n- Access token хранится только в памяти (Zustand state, без persist)\n- Refresh — в httpOnly cookie, фронт его не видит, но браузер автоматически шлёт\n- API client (axios/ky) с interceptor: на 401 → попытка refresh → повтор запроса. Если refresh тоже 401 → logout + redirect на /login\n- Защита от race condition: если несколько запросов одновременно получили 401 — refresh должен запуститься один раз\n\n## Технические детали\n- Использовать ky (легче axios, нативный fetch)\n- Refresh deduplication через shared promise\n- Middleware Next.js (`middleware.ts`): на защищённых роутах проверяет наличие refresh cookie, иначе redirect на /login\n\n## Критерии приёмки\n- [ ] Login сохраняет user, перенаправляет на /dashboard\n- [ ] При истечении access автоматически refresh, пользователь не замечает\n- [ ] Logout очищает store и cookie\n- [ ] Refresh deduplication протестирован"
+  },
+  {
+    "title": "[WEB] Dashboard layout: sidebar + workspace switcher",
+    "milestone": "MVP",
+    "labels": ["type:feature", "scope:web", "priority:p1"],
+    "body": "## Описание\nОсновной layout приложения: боковая панель, переключатель workspace, header.\n\n## Требования\n- Layout `app/(dashboard)/layout.tsx`\n- Sidebar: лого, workspace switcher, навигация (Boards, Clients, Analytics, Settings), profile в низу\n- Header: поиск (cmd+k), notifications bell, user menu\n- Mobile-responsive: sidebar превращается в drawer на md\n- Glass-стилистика: sidebar полупрозрачный, blur background\n\n## Технические детали\n- Workspace switcher через cmdk (или radix-ui) с поиском\n- При смене workspace — изменение URL (`/w/:slug/...`) и инвалидация TanStack Query кэшей\n- Sidebar состояние (collapsed/expanded) сохраняется в localStorage\n\n## Критерии приёмки\n- [ ] Layout работает на desktop и mobile\n- [ ] Workspace switcher переключает контекст\n- [ ] Активная навигация подсвечивается"
+  },
+  {
+    "title": "[WEB] Канбан-доска: компоненты Board, Column, Card",
+    "milestone": "MVP",
+    "labels": ["type:feature", "scope:web", "priority:p0"],
+    "body": "## Описание\nЦентральная фича: визуализация канбан-доски.\n\n## Требования\n- Страница `/w/:slug/boards/:boardId`\n- Горизонтальный скролл колонок\n- В каждой колонке: список карточек, кнопка добавления, header с названием и счётчиком\n- Карточка: title, tags, assignee avatar, due date, priority indicator, comments count\n- Glass effect на карточках и колонках\n- Drag overlay при перетаскивании (полупрозрачная карточка, следует за курсором)\n\n## Технические детали\n- **Drag and drop через `@dnd-kit/core`** + `@dnd-kit/sortable`\n  - `DndContext` оборачивает доску\n  - `SortableContext` для каждой колонки (вертикальная сортировка карточек)\n  - Также горизонтальная сортировка для самих колонок\n- **Optimistic updates**: при drag end сразу обновляем UI, потом отправляем PATCH /cards/:id/move. Если ошибка — откатываем и показываем toast.\n- Use TanStack Query: `useMutation` с `onMutate` для optimistic update, `onError` для rollback\n- Виртуализация (опционально): если в колонке 1000+ карточек — `@tanstack/react-virtual`\n\n## Критерии приёмки\n- [ ] Карточки можно перетаскивать внутри и между колонками\n- [ ] Изменения сохраняются на бэке\n- [ ] При ошибке — rollback и уведомление\n- [ ] Touch работает (для планшетов)\n- [ ] Keyboard accessible (Space — pick up, Arrow keys — move, Space — drop)"
+  },
+  {
+    "title": "[WEB] Card detail modal: редактирование, комментарии, вложения",
+    "milestone": "MVP",
+    "labels": ["type:feature", "scope:web", "priority:p1"],
+    "body": "## Описание\nДетальное представление карточки в модалке (или slide-over).\n\n## Требования\n- Открывается по клику на карточку\n- Поля для редактирования: title (inline edit), description (rich text), assignee, due date, tags, priority\n- Секция комментариев (с упоминаниями @username)\n- Загрузка вложений (drag&drop файлов)\n- История активности (audit log)\n\n## Технические детали\n- Rich text editor: TipTap (на базе ProseMirror, гибкий, лучше Lexical для нашего случая)\n- Загрузка файлов: presigned URL от бэка → прямой upload в S3/MinIO. Бэк сохраняет только метаданные.\n- Optimistic updates для всех изменений\n- URL state: `?cardId=...` чтобы можно было поделиться ссылкой\n\n## Критерии приёмки\n- [ ] Все поля редактируются и сохраняются\n- [ ] Файлы загружаются\n- [ ] Прямая ссылка на карточку открывает модалку"
+  },
+  {
+    "title": "[WEB] Real-time через Socket.io client (синхронизация доски)",
+    "milestone": "v1.0",
+    "labels": ["type:feature", "scope:web", "priority:p1"],
+    "body": "## Описание\nПодключить websocket-клиент к бэкенду, обновлять UI при событиях от других пользователей.\n\n## Требования\n- Подключение socket.io-client при входе в борду, отключение при выходе\n- При получении event обновить TanStack Query cache (через `queryClient.setQueryData`)\n- Presence: показывать аватарки пользователей, которые сейчас на доске\n- Live cursors (опционально, для v2)\n\n## Технические детали\n- Не invalidate а setQueryData — иначе будет лишний refetch\n- Дедупликация: если событие пришло после собственной мутации — игнорировать (сравнение по updated_at или version)\n- Reconnect при разрыве: socket.io делает это сам, но нужно показать UI-индикатор\n\n## Критерии приёмки\n- [ ] Изменения от другого пользователя видны мгновенно\n- [ ] Presence работает\n- [ ] При разрыве показывается badge \"reconnecting\""
+  },
+  {
+    "title": "[WEB] Аналитика: dashboard с метриками",
+    "milestone": "v1.0",
+    "labels": ["type:feature", "scope:web", "priority:p2"],
+    "body": "## Описание\nСтраница аналитики со статистикой по доскам и командам.\n\n## Требования\n- Метрики: количество созданных/завершённых задач, среднее время в каждой колонке (lead time), нагрузка по сотрудникам, burndown\n- Графики: line chart по времени, bar chart по людям, donut по тегам\n- Фильтры: период, доска, участник\n\n## Технические детали\n- Recharts или Chart.js (Recharts проще для React, но больше bundle size)\n- Бэк отдаёт уже агрегированные данные (не сырые карточки), кэшированные в Redis на 5-15 минут\n- Skeleton loaders при загрузке\n\n## Критерии приёмки\n- [ ] Все графики рендерятся\n- [ ] Фильтры работают\n- [ ] Загрузка <500мс при кэш-хите"
+  },
+  {
+    "title": "[WEB] Уведомления: bell с дропдауном + страница",
+    "milestone": "v1.0",
+    "labels": ["type:feature", "scope:web", "priority:p2"],
+    "body": "## Описание\nСистема уведомлений в приложении.\n\n## Требования\n- Bell иконка в header с counter непрочитанных\n- Dropdown с последними 10 уведомлениями\n- Полная страница `/notifications`\n- Real-time push через WebSocket\n- Mark as read / mark all as read\n- Email уведомления для важных событий (опционально через user preferences)\n\n## Технические детали\n- Бэк: модель `Notification` (userId, type, payload, readAt)\n- Типы: card.assigned, card.mentioned, card.due_soon, member.added\n- На фронте подписаться на канал `user:{userId}` в WebSocket\n\n## Критерии приёмки\n- [ ] Уведомления приходят в реальном времени\n- [ ] Counter обновляется\n- [ ] Email отправляется (для подписанных)"
+  },
+  {
+    "title": "[TEST] Unit + integration тесты для API (Jest)",
+    "milestone": "MVP",
+    "labels": ["type:test", "scope:api", "priority:p1"],
+    "body": "## Описание\nПокрытие тестами критичной бизнес-логики API.\n\n## Требования\n- Unit-тесты для services (mock Prisma через `prisma-mock` или ручные моки)\n- Integration-тесты с реальной БД (test database, transaction rollback после каждого теста)\n- Покрытие auth, cards.move, RBAC ≥ 80%\n\n## Технические детали\n- Jest + supertest для HTTP-тестов\n- Test database: отдельная БД, в `beforeEach` оборачиваем в транзакцию, в `afterEach` — rollback. Это дает изоляцию + скорость.\n- Factory functions для тестовых данных (например, `createTestUser`, `createTestBoard`)\n\n## Критерии приёмки\n- [ ] Coverage ≥ 80% для auth, cards, boards\n- [ ] Тесты запускаются в CI"
+  },
+  {
+    "title": "[TEST] E2E тесты для web (Playwright)",
+    "milestone": "v1.0",
+    "labels": ["type:test", "scope:web", "priority:p2"],
+    "body": "## Описание\nE2E тесты основных user flows.\n\n## Требования\n- Сценарии: register → create workspace → create board → create card → move card → invite member → comment\n- Drag and drop через Playwright (`page.dragTo`)\n- Запуск против staging environment в CI\n\n## Технические детали\n- Page Object Model для переиспользования\n- Тесты в `apps/web/e2e/`\n- В CI поднимать всё через docker compose, прогонять тесты, собирать report\n\n## Критерии приёмки\n- [ ] 5+ полных сценариев\n- [ ] CI прогоняет e2e на push в main"
+  },
+  {
+    "title": "[SECURITY] Rate limiting, CORS, helmet, secrets management",
+    "milestone": "v1.0",
+    "labels": ["type:feature", "scope:api", "priority:p1", "security"],
+    "body": "## Описание\nБазовая защита API.\n\n## Требования\n- Rate limiting на все эндпоинты (`@nestjs/throttler` с Redis storage)\n- Особо строго на `/auth/*`\n- CORS: allowlist конкретных origin (нет `*`)\n- Helmet middleware (CSP, X-Frame-Options и др.)\n- Все секреты в `.env` (никаких хардкоженных). Для prod — использовать секрет-менеджер (Doppler / AWS Secrets Manager)\n- Валидация size body (не более 10MB по умолчанию)\n\n## Критерии приёмки\n- [ ] Брутфорс блокируется на 6-й попытке\n- [ ] Helmet headers присутствуют в response"
+  },
+  {
+    "title": "[PERF] Кэширование частых запросов через Redis",
+    "milestone": "v1.0",
+    "labels": ["type:enhancement", "scope:api", "priority:p2", "performance"],
+    "body": "## Описание\nКэшировать часто запрашиваемые данные.\n\n## Требования\n- Member roles (TTL 60с) — снижает нагрузку при каждом запросе\n- Board structure (TTL 5 мин) с инвалидацией при мутациях\n- Analytics aggregates (TTL 15 мин)\n- Декоратор `@CacheKey('boards:{boardId}', 300)` для удобства\n\n## Технические детали\n- Использовать `cache-manager` + `cache-manager-ioredis`\n- Pattern для инвалидации: при изменении карточки — `cache.del('boards:{boardId}')`\n- НЕ кэшировать пользовательские данные смешанно (всегда учитывать userId/workspaceId в ключе)\n\n## Критерии приёмки\n- [ ] p95 latency на GET /boards/:id снизился в 2-3 раза\n- [ ] При мутации кэш инвалидируется"
+  },
+  {
+    "title": "[DOCS] Swagger API documentation на /api/docs",
+    "milestone": "MVP",
+    "labels": ["type:docs", "scope:api", "priority:p1"],
+    "body": "## Описание\nИнтерактивная документация API.\n\n## Требования\n- `@nestjs/swagger` с автогенерацией из DTO\n- Все эндпоинты задокументированы (@ApiOperation, @ApiResponse)\n- Авторизация через Bearer token прямо в Swagger UI\n- Разделение по тегам: Auth, Workspaces, Boards, Cards, etc.\n\n## Критерии приёмки\n- [ ] Все эндпоинты в Swagger\n- [ ] Можно сделать запрос из UI с авторизацией\n- [ ] Schema downloadable как JSON для генерации клиента"
+  },
+  {
+    "title": "[INFRA] Генерация типизированного API client из OpenAPI",
+    "milestone": "v1.0",
+    "labels": ["type:chore", "scope:infra", "priority:p2"],
+    "body": "## Описание\nАвтогенерировать `@swift/api-client` из Swagger schema.\n\n## Требования\n- На бэкенде эндпоинт `/api/docs-json` отдаёт OpenAPI spec\n- Скрипт `bun run generate:api-client` загружает schema и генерирует TS-клиент\n- Использовать `openapi-typescript` или `orval` (orval генерирует hooks для TanStack Query — удобно)\n- Клиент публикуется как пакет `@swift/api-client`, используется в web и mobile\n\n## Критерии приёмки\n- [ ] При изменении DTO в API → bun run generate → клиент обновлён → TS-ошибки на фронте, если что-то поменялось"
+  },
+  {
+    "title": "[MOBILE] React Native bootstrap (Expo)",
+    "milestone": "v2.0",
+    "labels": ["type:feature", "scope:mobile", "priority:p2"],
+    "body": "## Описание\nЗапустить мобильное приложение через Expo.\n\n## Требования\n- Expo SDK 51+\n- Expo Router (file-based routing, как Next.js)\n- NativeWind (Tailwind для RN)\n- Переиспользование `@swift/types`, `@swift/api-client` из монорепо\n\n## Критерии приёмки\n- [ ] `bun run dev:mobile` запускает Expo\n- [ ] Приложение открывается в Expo Go\n- [ ] Auth работает"
+  },
+  {
+    "title": "[MONITORING] Sentry для error tracking + структурное логирование",
+    "milestone": "v1.0",
+    "labels": ["type:chore", "scope:infra", "priority:p2"],
+    "body": "## Описание\nМониторинг ошибок и логов в production.\n\n## Требования\n- Sentry SDK на web и api\n- Source maps загружаются в Sentry\n- Pino logger с JSON output → отправка в logstash/datadog (опционально)\n- Custom tags: workspaceId, userId для быстрого поиска\n\n## Критерии приёмки\n- [ ] Ошибки на фронте и бэке попадают в Sentry\n- [ ] Source maps работают (видны нормальные стектрейсы)"
+  }
+]

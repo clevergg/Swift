@@ -1,0 +1,27 @@
+# Code owners — автоматически назначаются ревьюерами на PR.
+# Синтаксис: <pattern> <owner1> <owner2>
+# Подробнее: https://docs.github.com/en/repositories/managing-your-repositories-settings-and-security/customizing-your-repository/about-code-owners
+
+# Дефолтный владелец всего, что не подпадает под более специфичные правила
+*                       @clevergg
+
+# Backend
+/apps/api/              @clevergg
+/packages/db/           @clevergg
+
+# Frontend (web)
+/apps/web/              @clevergg
+
+# Mobile
+/apps/mobile/           @clevergg
+
+# Shared packages — критичные изменения
+/packages/types/        @clevergg
+/packages/ui/           @clevergg
+/packages/api-client/   @clevergg
+
+# Инфраструктура и конфиги — особое внимание
+/.github/               @clevergg
+/docker-compose.yml     @clevergg
+/turbo.json             @clevergg
+/docs/adr/              @clevergg

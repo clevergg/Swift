@@ -1,0 +1,33 @@
+[
+  { "name": "type:bug",          "color": "d73a4a", "description": "Что-то работает неправильно" },
+  { "name": "type:feature",      "color": "0e8a16", "description": "Новая функциональность" },
+  { "name": "type:enhancement",  "color": "a2eeef", "description": "Улучшение существующей фичи" },
+  { "name": "type:refactor",     "color": "fbca04", "description": "Рефакторинг без изменения поведения" },
+  { "name": "type:docs",         "color": "0075ca", "description": "Документация" },
+  { "name": "type:test",         "color": "bfd4f2", "description": "Тесты" },
+  { "name": "type:chore",        "color": "ededed", "description": "Инфраструктура, конфиги, CI" },
+
+  { "name": "scope:web",         "color": "1d76db", "description": "Next.js frontend" },
+  { "name": "scope:mobile",      "color": "5319e7", "description": "React Native app" },
+  { "name": "scope:api",         "color": "0e8a16", "description": "NestJS backend" },
+  { "name": "scope:db",          "color": "5319e7", "description": "Prisma schema, миграции" },
+  { "name": "scope:ui",          "color": "c5def5", "description": "Shared UI пакет" },
+  { "name": "scope:infra",       "color": "ededed", "description": "Docker, CI/CD, monorepo конфиг" },
+
+  { "name": "priority:p0",       "color": "b60205", "description": "Критично — блокирует релиз" },
+  { "name": "priority:p1",       "color": "d93f0b", "description": "Высокий приоритет" },
+  { "name": "priority:p2",       "color": "fbca04", "description": "Средний приоритет" },
+  { "name": "priority:p3",       "color": "0e8a16", "description": "Можно отложить" },
+
+  { "name": "status:triage",     "color": "ededed", "description": "Требуется оценка и расстановка приоритетов" },
+  { "name": "status:ready",      "color": "0e8a16", "description": "Готова к работе" },
+  { "name": "status:in-progress","color": "1d76db", "description": "В работе" },
+  { "name": "status:blocked",    "color": "b60205", "description": "Заблокирована другой задачей" },
+  { "name": "status:review",     "color": "fbca04", "description": "На code review" },
+
+  { "name": "good first issue",  "color": "7057ff", "description": "Хорошо для первого PR" },
+  { "name": "help wanted",       "color": "008672", "description": "Нужна помощь" },
+  { "name": "discussion",        "color": "d4c5f9", "description": "Требуется обсуждение перед реализацией" },
+  { "name": "security",          "color": "b60205", "description": "Связано с безопасностью" },
+  { "name": "performance",       "color": "fbca04", "description": "Связано с производительностью" }
+]
