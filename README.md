@@ -2,7 +2,7 @@
 
 > Современная CRM-платформа с канбан-доской, real-time синхронизацией и аналитикой.
 
-[![CI](https://github.com/<your-org>/swift-crm/actions/workflows/ci.yml/badge.svg)](https://github.com/<your-org>/swift-crm/actions/workflows/ci.yml)
+[![CI](https://github.com/clevergg/Swift/actions/workflows/ci.yml/badge.svg)](https://github.com/<your-org>/swift-crm/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 ##  Возможности
