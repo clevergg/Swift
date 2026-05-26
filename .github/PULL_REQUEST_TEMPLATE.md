@@ -53,7 +53,6 @@ Closes #
 - [ ] `packages/ui`
 - [ ] `packages/types`
 - [ ] `packages/db` (миграция БД!)
-- [ ] `packages/api-client`
 - [ ] Инфраструктура (Docker, CI)
 
 ---
