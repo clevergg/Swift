@@ -1,0 +1,5 @@
+{
+  "$schema": "https://json.schemastore.org/tsconfig",
+  "display": "Swift Base (root re-export)",
+  "extends": "./packages/config/typescript/base.json"
+}
