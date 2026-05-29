@@ -1,0 +1,79 @@
+# Docker Compose для локальной разработки Swift CRM.
+#
+# Поднимает инфраструктуру, нужную приложению на текущем этапе:
+#   - PostgreSQL: основная база данных
+#   - Redis: кэш и хранилище refresh-токенов (нужен для auth)
+#
+# MinIO (файловое хранилище) и Mailhog (почта) будут добавлены позже,
+# в фазах, где они реально понадобятся (загрузка файлов, отправка писем).
+#
+# Запуск:        docker compose up -d
+# Остановка:     docker compose down
+# Полная очистка (включая данные в volumes): docker compose down -v
+# Статус:        docker compose ps
+# Логи:          docker compose logs -f postgres
+
+services:
+  # ────────────────────────────────────────────────────────────────────────
+  #  PostgreSQL — основная БД
+  # ────────────────────────────────────────────────────────────────────────
+  postgres:
+    image: postgres:16-alpine
+    container_name: swift-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-swift}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-swift_dev_password}
+      POSTGRES_DB: ${POSTGRES_DB:-swift}
+    ports:
+      # Хост:Контейнер. Снаружи база доступна на localhost:5432
+      - "5432:5432"
+    volumes:
+      # Именованный volume — данные переживают перезапуск контейнера
+      - postgres_data:/var/lib/postgresql/data
+      # Init-скрипт выполняется один раз при создании volume: ставит extensions
+      - ./scripts/postgres-init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      # Docker проверяет готовность базы; другие сервисы могут ждать healthy
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-swift} -d ${POSTGRES_DB:-swift}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - swift-network
+
+  # ────────────────────────────────────────────────────────────────────────
+  #  Redis — кэш и refresh-токены
+  # ────────────────────────────────────────────────────────────────────────
+  redis:
+    image: redis:7-alpine
+    container_name: swift-redis
+    restart: unless-stopped
+    # appendonly yes — Redis сохраняет данные на диск (refresh-токены не теряются
+    # при перезапуске). maxmemory + policy — защита от разрастания памяти.
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - swift-network
+
+# Именованные volumes: Docker хранит данные отдельно от контейнеров,
+# поэтому docker compose down не стирает базу (для этого нужен down -v).
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+
+# Отдельная сеть: сервисы видят друг друга по имени (postgres, redis)
+# вместо IP. Изолирует проект от других контейнеров на машине.
+networks:
+  swift-network:
+    driver: bridge
