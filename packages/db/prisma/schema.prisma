@@ -1,8 +1,9 @@
+// Prisma schema для Swift CRM (Prisma ORM 7).
+// Ядро: User, Workspace, Member. Доска: Board, Column, Card, Tag, CardTag.
+// Решения: docs/adr/0002 (схема ядра), docs/adr/0003 (позиционирование).
+
 generator client {
   provider = "prisma-client"
-  // output теперь ОБЯЗАТЕЛЕН. Клиент больше не кладётся в node_modules,
-  // а генерируется в указанную папку. Кладём внутрь src пакета db.
-  // Эта папка в .gitignore и пересоздаётся через postinstall.
   output   = "../src/generated/prisma"
 }
 
@@ -10,15 +11,19 @@ datasource db {
   provider = "postgresql"
 }
 //  Enums
-// Роль участника внутри конкретного workspace.
-// Иерархия прав: OWNER > ADMIN > MEMBER > VIEWER.
 enum Role {
   OWNER
   ADMIN
   MEMBER
   VIEWER
 }
-//  User — зарегистрированный человек
+enum Priority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+//  User
 model User {
   id           String   @id @default(uuid()) @db.Uuid
   email        String   @unique @db.Citext
@@ -30,10 +35,13 @@ model User {
 
   ownedWorkspaces Workspace[] @relation("WorkspaceOwner")
   memberships     Member[]
+  // Карточки, созданные пользователем, и назначенные на него.
+  createdCards    Card[]      @relation("CardCreatedBy")
+  assignedCards   Card[]      @relation("CardAssignee")
 
   @@map("users")
 }
-//  Workspace — рабочее пространство команды (tenant)
+//  Workspace
 model Workspace {
   id        String   @id @default(uuid()) @db.Uuid
   name      String
@@ -45,11 +53,12 @@ model Workspace {
   owner   User   @relation("WorkspaceOwner", fields: [ownerId], references: [id])
 
   members Member[]
+  boards  Board[]
 
   @@index([ownerId])
   @@map("workspaces")
 }
-//  Member — связь User <-> Workspace с ролью (join table with payload)
+//  Member - связь User <-> Workspace с ролью
 model Member {
   id        String   @id @default(uuid()) @db.Uuid
   role      Role     @default(MEMBER)
@@ -64,4 +73,107 @@ model Member {
   @@unique([userId, workspaceId])
   @@index([workspaceId])
   @@map("members")
+}
+//  Board - канбан-доска внутри workspace
+model Board {
+  id          String   @id @default(uuid()) @db.Uuid
+  name        String
+  description String?
+  // Позиция доски среди других досок workspace (float, см. ADR-0003).
+  position    Float
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  workspaceId String    @db.Uuid
+  // Удаление workspace удаляет его доски.
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  columns Column[]
+  tags    Tag[]
+
+  @@index([workspaceId])
+  @@map("boards")
+}
+//  Column = колонка на доске (Todo, In Progress, Done...)
+model Column {
+  id        String   @id @default(uuid()) @db.Uuid
+  name      String
+  // Позиция колонки на доске (порядок слева направо).
+  position  Float
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  boardId String @db.Uuid
+  // Удаление доски удаляет её колонки.
+  board   Board  @relation(fields: [boardId], references: [id], onDelete: Cascade)
+
+  cards Card[]
+
+  @@index([boardId])
+  @@map("columns")
+}
+//  Card - карточка (задача) в колонке
+model Card {
+  id          String    @id @default(uuid()) @db.Uuid
+  title       String
+  description String?
+  // Позиция карточки в колонке (порядок сверху вниз, float, см. ADR-0003).
+  position    Float
+  priority    Priority  @default(MEDIUM)
+  dueDate     DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  columnId String @db.Uuid
+  // Удаление колонки удаляет её карточки.
+  column   Column @relation(fields: [columnId], references: [id], onDelete: Cascade)
+
+  // Кто создал карточку. При удалении создателя карточка остаётся,
+  // createdById обнуляется (SetNull) - карточка не должна исчезать с человеком.
+  createdById String? @db.Uuid
+  createdBy   User?   @relation("CardCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+
+  // Кто назначен на карточку (исполнитель). Тоже SetNull при удалении.
+  assigneeId String? @db.Uuid
+  assignee   User?   @relation("CardAssignee", fields: [assigneeId], references: [id], onDelete: SetNull)
+
+  // Теги карточки (many-to-many через CardTag).
+  cardTags CardTag[]
+
+  @@index([columnId])
+  @@index([assigneeId])
+  @@map("cards")
+}
+//  Tag - метка, живёт на доске, навешивается на карточки
+model Tag {
+  id        String   @id @default(uuid()) @db.Uuid
+  name      String
+  // Цвет тега (hex), для отображения в UI.
+  color     String
+  createdAt DateTime @default(now())
+
+  boardId String @db.Uuid
+  // Удаление доски удаляет её теги.
+  board   Board  @relation(fields: [boardId], references: [id], onDelete: Cascade)
+
+  cardTags CardTag[]
+
+  // Имя тега уникально в пределах доски (нельзя два одинаковых тега на одной доске).
+  @@unique([boardId, name])
+  @@index([boardId])
+  @@map("tags")
+}
+//  CardTag — связь Card <-> Tag (many-to-many, join table)
+model CardTag {
+  cardId String @db.Uuid
+  card   Card   @relation(fields: [cardId], references: [id], onDelete: Cascade)
+
+  tagId String @db.Uuid
+  tag   Tag    @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  // Составной первичный ключ: пара (cardId, tagId) уникальна и сама себе id.
+  // Тегу на карточке не нужен отдельный id - связь определяется парой.
+  @@id([cardId, tagId])
+  @@index([tagId])
+  @@map("card_tags")
 }
