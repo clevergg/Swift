@@ -1,0 +1,7 @@
+# Сгенерированный Prisma Client — артефакт сборки, не коммитим.
+# Пересоздаётся через postinstall (prisma generate) при каждом bun install.
+src/generated/
+
+# Сборка
+dist/
+.turbo/

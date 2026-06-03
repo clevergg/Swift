@@ -1,0 +1,15 @@
+{
+  "extends": "@swift/config/typescript/library",
+  "compilerOptions": {
+    "outDir": "dist",
+    "rootDir": "src",
+    "composite": false,
+    "skipLibCheck": true
+  },
+  "include": [
+    "src/**/*"
+  ],
+  "exclude": [
+    "node_modules", "dist", "prisma"
+  ]
+}

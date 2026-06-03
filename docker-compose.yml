@@ -26,8 +26,8 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-swift_dev_password}
       POSTGRES_DB: ${POSTGRES_DB:-swift}
     ports:
-      # Хост:Контейнер. Снаружи база доступна на localhost:5432
-      - "5432:5432"
+      # Хост:Контейнер. Снаружи база доступна на localhost:5433
+      - "5433:5432"
     volumes:
       # Именованный volume — данные переживают перезапуск контейнера
       - postgres_data:/var/lib/postgresql/data
