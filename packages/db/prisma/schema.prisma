@@ -1,0 +1,67 @@
+generator client {
+  provider = "prisma-client"
+  // output теперь ОБЯЗАТЕЛЕН. Клиент больше не кладётся в node_modules,
+  // а генерируется в указанную папку. Кладём внутрь src пакета db.
+  // Эта папка в .gitignore и пересоздаётся через postinstall.
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+//  Enums
+// Роль участника внутри конкретного workspace.
+// Иерархия прав: OWNER > ADMIN > MEMBER > VIEWER.
+enum Role {
+  OWNER
+  ADMIN
+  MEMBER
+  VIEWER
+}
+//  User — зарегистрированный человек
+model User {
+  id           String   @id @default(uuid()) @db.Uuid
+  email        String   @unique @db.Citext
+  passwordHash String
+  name         String
+  avatarUrl    String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  ownedWorkspaces Workspace[] @relation("WorkspaceOwner")
+  memberships     Member[]
+
+  @@map("users")
+}
+//  Workspace — рабочее пространство команды (tenant)
+model Workspace {
+  id        String   @id @default(uuid()) @db.Uuid
+  name      String
+  slug      String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  ownerId String @db.Uuid
+  owner   User   @relation("WorkspaceOwner", fields: [ownerId], references: [id])
+
+  members Member[]
+
+  @@index([ownerId])
+  @@map("workspaces")
+}
+//  Member — связь User <-> Workspace с ролью (join table with payload)
+model Member {
+  id        String   @id @default(uuid()) @db.Uuid
+  role      Role     @default(MEMBER)
+  createdAt DateTime @default(now())
+
+  userId String @db.Uuid
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  workspaceId String    @db.Uuid
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, workspaceId])
+  @@index([workspaceId])
+  @@map("members")
+}
