@@ -6,14 +6,23 @@ on:
   push:
     branches: [main, dev]
 
-# Отменяем предыдущие запуски при новом push в ту же ветку (экономим минуты Actions)
+# Отменяем предыдущие запуски при новом push в ту же ветку
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+# Фейковый DATABASE_URL на уровне всего workflow.
+# Нужен, потому что postinstall пакета @swift/db запускает prisma generate,
+# а prisma.config.ts требует переменную DATABASE_URL через env().
+# Сама генерация клиента НЕ подключается к базе и этот url не использует —
+# значение чисто формальное, чтобы env() не падал с ошибкой Cannot resolve.
+# Реальный DATABASE_URL появится здесь позже, когда добавим job с Postgres.
+env:
+  DATABASE_URL: "postgresql://ci:ci@localhost:5432/ci"
+
 jobs:
   lint-and-typecheck:
-    name: 🧹 Lint & Typecheck
+    name: Lint and Typecheck
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -35,7 +44,7 @@ jobs:
         run: bun run typecheck
 
   build:
-    name: 🏗️ Build
+    name: Build
     runs-on: ubuntu-latest
     needs: [lint-and-typecheck]
     steps:
@@ -54,10 +63,6 @@ jobs:
       - name: Build all packages
         run: bun run build
 
-# ─────────────────────────────────────────────────────────────────────────────
-#  ЗАМЕТКА НА БУДУЩЕЕ:
-#  Job 'test' с Postgres + Redis + миграциями Prisma будет добавлен,
-#  когда появится пакет @swift/db и первые тесты (фаза работы с БД).
-#  Job 'e2e' с Playwright — когда появится apps/web с UI.
-#  Не добавляем их сейчас, чтобы CI проверял только реально существующий код.
-# ─────────────────────────────────────────────────────────────────────────────
+# ЗАМЕТКА НА БУДУЩЕЕ:
+# Job test с реальным Postgres + Redis и настоящим DATABASE_URL добавится,
+# когда появятся тесты с базой.
