@@ -1,0 +1,10 @@
+{
+  "extends": "@swift/config/typescript/nestjs",
+  "compilerOptions": {
+    "outDir": "dist",
+    "rootDir": "src",
+    "baseUrl": "."
+  },
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "dist"]
+}
