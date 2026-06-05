@@ -7,17 +7,6 @@ import {
 } from '@nestjs/common';
 import { type Request, type Response } from 'express';
 
-/**
- * AllExceptionsFilter — глобальный обработчик ошибок.
- *
- * ЗАЧЕМ: без него NestJS отдаёт ошибки в разном формате — встроенные
- * исключения в одном виде, неожиданные ошибки в другом. Этот фильтр
- * приводит ВСЕ ошибки к единому формату ответа:
- *   { code, message, details?, path, timestamp }
- * Так фронту проще обрабатывать ошибки — формат всегда одинаковый.
- *
- * @Catch() без аргументов = ловит вообще все исключения.
- */
 @Catch()
 export class AllExceptionsFilter implements ExceptionFilter {
   catch(exception: unknown, host: ArgumentsHost): void {
@@ -25,15 +14,13 @@ export class AllExceptionsFilter implements ExceptionFilter {
     const response = ctx.getResponse<Response>();
     const request = ctx.getRequest<Request>();
 
-    let status = HttpStatus.INTERNAL_SERVER_ERROR; // по умолчанию 500
+    let status = HttpStatus.INTERNAL_SERVER_ERROR; 
     let body: Record<string, unknown> = {
       code: 'INTERNAL_ERROR',
       message: 'Внутренняя ошибка сервера',
     };
 
     if (exception instanceof HttpException) {
-      // Это ожидаемое исключение NestJS (наш BadRequestException из pipe,
-      // NotFoundException и т.д.). У него есть статус и тело.
       status = exception.getStatus();
       const res = exception.getResponse();
       body =

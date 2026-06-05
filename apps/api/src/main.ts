@@ -2,14 +2,17 @@ import './load-env';
 
 import { NestFactory } from '@nestjs/core';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
+import cookieParser from 'cookie-parser';
 import { Logger } from 'nestjs-pino';
 
 import { AppModule } from './app.module';
 import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
 
+
 async function bootstrap(): Promise<void> {
   const app = await NestFactory.create(AppModule, { bufferLogs: true });
   app.useLogger(app.get(Logger));
+  app.use(cookieParser()); 
   app.useGlobalFilters(new AllExceptionsFilter());
   app.setGlobalPrefix('api');
   const corsOrigins = (process.env['CORS_ORIGINS'] ?? 'http://localhost:3000').split(',');
@@ -27,7 +30,7 @@ async function bootstrap(): Promise<void> {
     .addBearerAuth() // покажет поле для JWT-токена в Swagger UI (пригодится с auth)
     .build();
   const document = SwaggerModule.createDocument(app, swaggerConfig);
-  SwaggerModule.setup('api/docs', app, document);
+  SwaggerModule.setup('api/docs', app, document)
 
   const port = process.env['API_PORT'] ?? 3001;
   await app.listen(port);
@@ -38,7 +41,7 @@ async function bootstrap(): Promise<void> {
 }
 
 bootstrap().catch((err) => {
-  // eslint-disable-next-line no-console
+   
   console.error('Ошибка запуска приложения:', err);
   process.exit(1);
 });
