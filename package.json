@@ -1,13 +1,22 @@
 {
   "name": "swift-crm",
   "version": "0.0.0",
-  "private": true,
+  "devDependencies": {
+    "@commitlint/cli": "^19.4.0",
+    "@commitlint/config-conventional": "^19.4.0",
+    "husky": "^9.1.0",
+    "prettier": "^3.3.0",
+    "prettier-plugin-tailwindcss": "^0.6.6",
+    "turbo": "^2.0.0",
+    "typescript": "^5.5.0"
+  },
   "description": "Modern CRM platform with Kanban board, real-time sync, and analytics",
-  "type": "module",
-  "workspaces": [
-    "apps/*",
-    "packages/*"
-  ],
+  "engines": {
+    "node": ">=20",
+    "bun": ">=1.1"
+  },
+  "packageManager": "bun@1.1.0",
+  "private": true,
   "scripts": {
     "build": "turbo run build",
     "dev": "turbo run dev",
@@ -31,18 +40,9 @@
     "clean": "turbo run clean && rm -rf node_modules .turbo",
     "prepare": "husky"
   },
-  "devDependencies": {
-    "@commitlint/cli": "^19.4.0",
-    "@commitlint/config-conventional": "^19.4.0",
-    "husky": "^9.1.0",
-    "prettier": "^3.3.0",
-    "prettier-plugin-tailwindcss": "^0.6.6",
-    "turbo": "^2.0.0",
-    "typescript": "^5.5.0"
-  },
-  "engines": {
-    "node": ">=20",
-    "bun": ">=1.1"
-  },
-  "packageManager": "bun@1.1.0"
+  "type": "module",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ]
 }
