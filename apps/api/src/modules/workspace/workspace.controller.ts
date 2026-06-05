@@ -33,8 +33,6 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 export class WorkspaceController {
   constructor(private readonly workspaceService: WorkspaceService) {}
 
-  // Создание — любой залогиненный (только JwtAuthGuard, без проверки роли:
-  // workspace ещё не существует, ролей в нём нет). Создатель станет OWNER.
   @Post()
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Создать workspace (создатель становится OWNER)' })
@@ -45,8 +43,6 @@ export class WorkspaceController {
     return this.workspaceService.create(user.id, dto);
   }
 
-  // Список своих workspace — JwtAuthGuard (RolesGuard не нужен: фильтруем
-  // по самому юзеру, отдаём только те, где он участник).
   @Get()
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Список моих workspace' })
@@ -56,7 +52,6 @@ export class WorkspaceController {
     return this.workspaceService.findUserWorkspaces(user.id);
   }
 
-  // Получить один — нужна роль VIEWER (быть участником).
   @Get(':workspaceId')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.VIEWER)
@@ -67,7 +62,6 @@ export class WorkspaceController {
     return this.workspaceService.findOne(workspaceId);
   }
 
-  // Обновление — ADMIN и выше.
   @Patch(':workspaceId')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.ADMIN)
@@ -79,7 +73,6 @@ export class WorkspaceController {
     return this.workspaceService.update(workspaceId, dto);
   }
 
-  // Удаление — только OWNER.
   @Delete(':workspaceId')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.OWNER)

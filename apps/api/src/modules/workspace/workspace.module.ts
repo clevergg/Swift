@@ -5,8 +5,6 @@ import { MemberService } from './member.service';
 import { WorkspaceController } from './workspace.controller';
 import { WorkspaceService } from './workspace.service';
 
-// WorkspaceModule — CRUD workspace и управление участниками.
-// Заменяет демонстрационный workspace-example.controller из задачи RBAC.
 @Module({
   controllers: [WorkspaceController, MemberController],
   providers: [WorkspaceService, MemberService],
