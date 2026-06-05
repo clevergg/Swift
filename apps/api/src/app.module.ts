@@ -5,7 +5,7 @@ import { LoggerModule } from 'nestjs-pino';
 import { validateEnv } from './config/env.validation';
 import { AuthModule } from './modules/auth/auth.module';
 import { HealthModule } from './modules/health/health.module';
-import { WorkspaceExampleController } from './modules/workspace/workspace-example.controller';
+import { WorkspaceModule } from './modules/workspace/workspace.module';
 
 @Module({
   imports: [
@@ -23,9 +23,8 @@ import { WorkspaceExampleController } from './modules/workspace/workspace-exampl
       },
     }),
     AuthModule,
-
+    WorkspaceModule,
     HealthModule,
   ],
-  controllers: [WorkspaceExampleController]
 })
 export class AppModule {}
