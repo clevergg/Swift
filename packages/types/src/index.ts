@@ -7,3 +7,4 @@
 export * from './enums.js';
 export * from './auth.js';
 export * from './workspace.js';
+export * from './board.js';
