@@ -26,6 +26,13 @@ export class CardService {
       },
     });
   }
+  async getBoardId(cardId: string): Promise<string | null> {
+    const card = await prisma.card.findUnique({
+      where: { id: cardId },
+      select: { column: { select: { boardId: true } } },
+    });
+    return card?.column.boardId ?? null;
+  }
 
   async findOne(cardId: string): Promise<unknown> {
     const card = await prisma.card.findUnique({ where: { id: cardId } });
@@ -122,6 +129,7 @@ export class CardService {
         }),
       ),
     );
+    
 
     return prisma.card.findUnique({ where: { id: cardId } });
   }

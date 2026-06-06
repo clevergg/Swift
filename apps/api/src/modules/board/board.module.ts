@@ -7,8 +7,10 @@ import { CardController } from './card.controller';
 import { CardService } from './card.service';
 import { ColumnController } from './column.controller';
 import { ColumnService } from './column.service';
+import { RealtimeModule } from '../realtime/realtime.module';
 
 @Module({
+  imports: [RealtimeModule],
   controllers: [
     BoardController,
     BoardItemController,

@@ -6,6 +6,7 @@ import { validateEnv } from './config/env.validation';
 import { AuthModule } from './modules/auth/auth.module';
 import { BoardModule } from './modules/board/board.module';
 import { HealthModule } from './modules/health/health.module';
+import { RealtimeModule } from './modules/realtime/realtime.module';
 import { WorkspaceModule } from './modules/workspace/workspace.module';
 
 @Module({
@@ -27,6 +28,7 @@ import { WorkspaceModule } from './modules/workspace/workspace.module';
     WorkspaceModule,
     BoardModule,
     HealthModule,
+    RealtimeModule,
   ],
 })
 export class AppModule {}
