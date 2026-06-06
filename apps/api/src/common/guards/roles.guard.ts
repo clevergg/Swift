@@ -12,78 +12,103 @@ import { ROLES_KEY } from '../decorators/roles.decorator';
 import { hasRequiredRole } from '../enums/role-hierarchy';
 
 /**
- * RolesGuard — проверяет, есть ли у юзера нужная роль в workspace.
+ * RolesGuard — проверяет роль юзера в workspace.
  *
- * Запускается ПОСЛЕ JwtAuthGuard (тот уже положил юзера в request.user).
- * Шаги:
- *  1. Прочитать требуемую роль из метаданных (@Roles(...) на эндпоинте).
- *  2. Достать workspaceId из URL (request.params.workspaceId).
- *  3. Найти роль юзера в этом workspace (запись Member).
- *  4. Сравнить с требуемой по иерархии. Не хватает → 403.
+ * Расширен: workspaceId определяется ГИБКО, в зависимости от того, что есть
+ * в URL. Это нужно, потому что ресурсы вложены на разную глубину:
+ *  - /workspaces/:workspaceId/...   → workspaceId прямо в URL
+ *  - /boards/:boardId/...           → workspaceId через board
+ *  - /columns/:columnId/...         → через column → board
+ *  - /cards/:cardId/...             → через card → column → board
  *
- * CanActivate — интерфейс guard, метод canActivate возвращает true (пускаем)
- * или кидает исключение (отказ).
+ * Guard сам поднимается по цепочке принадлежности до workspace. Так короткие
+ * URL ресурсов работают с RBAC без дублирования всей иерархии в пути.
  */
 @Injectable()
 export class RolesGuard implements CanActivate {
-  // Reflector — инструмент NestJS для чтения метаданных, записанных декоратором.
   constructor(private readonly reflector: Reflector) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
-    // 1. Читаем требуемую роль из метаданных обработчика (что задал @Roles).
     const requiredRole = this.reflector.getAllAndOverride<Role | undefined>(ROLES_KEY, [
-      context.getHandler(), // метод контроллера
-      context.getClass(), // сам контроллер (если @Roles на уровне класса)
+      context.getHandler(),
+      context.getClass(),
     ]);
 
-    // Если @Roles не задан — эндпоинт не требует конкретной роли, пропускаем.
-    // (он всё равно защищён JwtAuthGuard, если тот навешан — достаточно быть залогиненным)
+    // Нет @Roles — проверка роли не требуется.
     if (!requiredRole) {
       return true;
     }
 
-    // Достаём запрос и юзера (его положил JwtAuthGuard).
     const request = context.switchToHttp().getRequest<{
       user?: { id: string };
       params: Record<string, string>;
     }>();
     const user = request.user;
-
-    // Юзера нет — значит RolesGuard навесили без JwtAuthGuard. Это ошибка
-    // конфигурации: проверка роли без аутентификации бессмысленна.
     if (!user) {
       throw new ForbiddenException('Требуется аутентификация');
     }
 
-    // 2. Достаём workspaceId из URL (/workspaces/:workspaceId/...).
-    const workspaceId = request.params['workspaceId'];
+    // Определяем workspaceId из того, что есть в URL.
+    const workspaceId = await this.resolveWorkspaceId(request.params);
     if (!workspaceId) {
-      // Эндпоинт с @Roles, но без workspaceId в URL — ошибка проектирования.
-      throw new BadRequestException('workspaceId обязателен в URL для проверки прав');
+      throw new BadRequestException('Не удалось определить workspace для проверки прав');
     }
 
-    // 3. Находим роль юзера в этом workspace (запись Member).
+    // Находим роль юзера в этом workspace.
     const member = await prisma.member.findUnique({
-      where: {
-        userId_workspaceId: {
-          userId: user.id,
-          workspaceId,
-        },
-      },
+      where: { userId_workspaceId: { userId: user.id, workspaceId } },
     });
-
-    // Юзер не состоит в workspace — нет доступа.
     if (!member) {
       throw new ForbiddenException('Вы не состоите в этом рабочем пространстве');
     }
-
-    // 4. Сравниваем роль по иерархии.
     if (!hasRequiredRole(member.role, requiredRole)) {
-      throw new ForbiddenException(
-        `Недостаточно прав. Требуется роль ${requiredRole} или выше`,
-      );
+      throw new ForbiddenException(`Недостаточно прав. Требуется роль ${requiredRole} или выше`);
     }
 
+    // Кладём workspaceId и роль в request — пригодятся контроллеру/сервису.
+    (request as { workspaceId?: string; memberRole?: Role }).workspaceId = workspaceId;
+    (request as { workspaceId?: string; memberRole?: Role }).memberRole = member.role;
+
     return true;
+  }
+
+  /**
+   * Определяет workspaceId из параметров URL, поднимаясь по цепочке ресурсов.
+   * Проверяет параметры от самого конкретного (cardId) к общему (workspaceId).
+   */
+  private async resolveWorkspaceId(params: Record<string, string>): Promise<string | null> {
+    // Прямой случай — workspaceId в URL.
+    if (params['workspaceId']) {
+      return params['workspaceId'];
+    }
+
+    // boardId → workspaceId.
+    if (params['boardId']) {
+      const board = await prisma.board.findUnique({
+        where: { id: params['boardId'] },
+        select: { workspaceId: true },
+      });
+      return board?.workspaceId ?? null;
+    }
+
+    // columnId → board → workspaceId.
+    if (params['columnId']) {
+      const column = await prisma.column.findUnique({
+        where: { id: params['columnId'] },
+        select: { board: { select: { workspaceId: true } } },
+      });
+      return column?.board.workspaceId ?? null;
+    }
+
+    // cardId → column → board → workspaceId.
+    if (params['cardId']) {
+      const card = await prisma.card.findUnique({
+        where: { id: params['cardId'] },
+        select: { column: { select: { board: { select: { workspaceId: true } } } } },
+      });
+      return card?.column.board.workspaceId ?? null;
+    }
+
+    return null;
   }
 }

@@ -4,6 +4,7 @@ import { LoggerModule } from 'nestjs-pino';
 
 import { validateEnv } from './config/env.validation';
 import { AuthModule } from './modules/auth/auth.module';
+import { BoardModule } from './modules/board/board.module';
 import { HealthModule } from './modules/health/health.module';
 import { WorkspaceModule } from './modules/workspace/workspace.module';
 
@@ -24,6 +25,7 @@ import { WorkspaceModule } from './modules/workspace/workspace.module';
     }),
     AuthModule,
     WorkspaceModule,
+    BoardModule,
     HealthModule,
   ],
 })
