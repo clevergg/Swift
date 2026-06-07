@@ -1,0 +1,79 @@
+@import 'tailwindcss';
+
+@variant dark (&:where(.dark, .dark *));
+
+/* Дизайн-токены (@theme) */
+@theme {
+  /* Цвета-токены (светлая тема - значения по умолчанию).
+     Имя --color-* автоматически даёт утилиты bg-*, text-*, border-* и т.д. */
+  --color-surface: rgb(255 255 255 / 0.45);
+  --color-surface-strong: rgb(255 255 255 / 0.85);
+  --color-surface-border: rgb(255 255 255 / 0.65);
+  --color-ink: rgb(30 58 82);
+  --color-ink-muted: rgb(90 112 136);
+  --color-accent: rgb(90 125 168);
+  --color-accent-ink: rgb(255 255 255);
+
+  /* Радиусы */
+  --radius-glass: 16px;
+  --radius-pill: 999px;
+
+  /* Тени стекла */
+  --shadow-glass: 0 8px 32px rgba(90, 125, 168, 0.15);
+  --shadow-glass-sm: 0 4px 16px rgba(90, 125, 168, 0.12);
+  --shadow-glass-lg: 0 12px 40px rgba(90, 125, 168, 0.18);
+
+  /* Шрифт */
+  --font-sans: 'Inter', system-ui, sans-serif;
+}
+
+/* Переменные тем для фона и стекла
+   Эти значения меняются между темами (через :root / .dark) и используются
+   в утилитах .glass ниже. Держим отдельно от @theme, т.к. они переключаются. */
+:root {
+  --bg-gradient: linear-gradient(165deg, #a5c8e8 0%, #c5d8e8 28%, #dfe4e8 58%, #ece6e0 100%);
+  --glass-bg: rgb(255 255 255 / 0.45);
+  --glass-strong-bg: rgb(255 255 255 / 0.85);
+  --glass-border: rgb(255 255 255 / 0.65);
+}
+
+.dark {
+  /* Тёмная тема - глубокое ночное небо. Переопределяем токены-цвета
+     и переменные фона/стекла. */
+  --color-surface: rgb(40 60 95 / 0.25);
+  --color-surface-strong: rgb(30 45 75 / 0.35);
+  --color-surface-border: rgb(120 165 220 / 0.22);
+  --color-ink: rgb(200 220 245);
+  --color-ink-muted: rgb(138 168 208);
+  --color-accent: rgb(77 181 240);
+  --color-accent-ink: rgb(6 16 31);
+
+  --bg-gradient: linear-gradient(165deg, #0a0f1f 0%, #0d1326 45%, #070b18 100%);
+  --glass-bg: rgb(40 60 95 / 0.25);
+  --glass-strong-bg: rgb(30 45 75 / 0.35);
+  --glass-border: rgb(120 165 220 / 0.22);
+}
+
+/*Базовые стили*/
+body {
+  background: var(--bg-gradient);
+  background-attachment: fixed;
+  min-height: 100vh;
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+}
+
+/*Glass-утилиты*/
+@utility glass {
+  background: var(--glass-bg);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--glass-border);
+}
+
+@utility glass-strong {
+  background: var(--glass-strong-bg);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--glass-border);
+}
