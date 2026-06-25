@@ -8,9 +8,9 @@ import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 
-import { api, ApiException } from '@/lib/api';
 import { PillButton } from '@/components/ui/pill-button';
 import { TextField } from '@/components/ui/text-field';
+import { api, ApiException } from '@/lib/api';
 
 // Форма входа. Валидация формы — LoginSchema из @swift/types (та же,
 // что валидирует бэкенд). Отправка через нашу api-обёртку.

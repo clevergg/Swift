@@ -1,5 +1,5 @@
-import { GlassPanel } from '@/components/ui/glass-panel';
 import { RegisterForm } from '@/components/auth/register-form';
+import { GlassPanel } from '@/components/ui/glass-panel';
 
 export default function RegisterPage() {
   return (

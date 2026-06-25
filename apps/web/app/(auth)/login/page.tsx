@@ -1,5 +1,5 @@
-import { GlassPanel } from '@/components/ui/glass-panel';
 import { LoginForm } from '@/components/auth/login-form';
+import { GlassPanel } from '@/components/ui/glass-panel';
 
 export default function LoginPage() {
   return (

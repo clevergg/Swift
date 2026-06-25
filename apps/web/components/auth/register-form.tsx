@@ -9,9 +9,9 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 
-import { api, ApiException } from '@/lib/api';
 import { PillButton } from '@/components/ui/pill-button';
 import { TextField } from '@/components/ui/text-field';
+import { api, ApiException } from '@/lib/api';
 
 // Расширяем серверную RegisterSchema полем confirmPassword (только на фронте —
 // бэкенду оно не нужно). refine проверяет, что пароли совпадают.
