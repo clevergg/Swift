@@ -1,13 +1,14 @@
 import {
   Controller,
   Post,
+  Get,
   Body,
   Res,
   UseGuards,
   HttpCode,
   HttpStatus,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import {
   RegisterSchema,
   LoginSchema,
@@ -17,13 +18,14 @@ import {
 } from '@swift/types';
 import type { Response } from 'express';
 
-
 import { AuthService } from './auth.service';
+import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { RefreshJwtGuard } from './guards/refresh-jwt.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { ZodValidationPipe } from '../../common/pipes/zod-validation.pipe';
 
 const REFRESH_COOKIE = 'refresh_token';
+const SESSION_FLAG_COOKIE = 'has_session';
 
 @ApiTags('auth')
 @Controller('auth')
@@ -52,6 +54,18 @@ export class AuthController {
     this.setRefreshCookie(res, tokens.refreshToken);
     return { accessToken: tokens.accessToken, user };
   }
+  // Текущий пользователь по access-токену. Защищён JwtAuthGuard:
+  // токен в заголовке Authorization: Bearer <access>. Используется фронтом
+  // для восстановления сессии (узнать, кто залогинен).
+  @Get('me')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Текущий авторизованный пользователь' })
+  async me(
+    @CurrentUser() user: { id: string },
+  ): Promise<{ id: string; email: string; name: string; avatarUrl: string | null }> {
+    return this.authService.getMe(user.id);
+  }
 
   @Post('refresh')
   @UseGuards(RefreshJwtGuard)
@@ -76,16 +90,28 @@ export class AuthController {
   ): Promise<{ success: boolean }> {
     await this.authService.logout(user.id, user.jti);
     res.clearCookie(REFRESH_COOKIE, { path: '/api/auth' });
+    res.clearCookie(SESSION_FLAG_COOKIE, { path: '/' });
     return { success: true };
   }
 
   private setRefreshCookie(res: Response, refreshToken: string): void {
+    const maxAge = 30 * 24 * 60 * 60 * 1000;
+    const isProd = process.env['NODE_ENV'] === 'production';
+ 
     res.cookie(REFRESH_COOKIE, refreshToken, {
       httpOnly: true,
-      secure: process.env['NODE_ENV'] === 'production',
+      secure: isProd,
       sameSite: 'strict',
-      maxAge: 30 * 24 * 60 * 60 * 1000,
+      maxAge,
       path: '/api/auth',
+    });
+ 
+    res.cookie(SESSION_FLAG_COOKIE, '1', {
+      httpOnly: true,
+      secure: isProd,
+      sameSite: 'strict',
+      maxAge,
+      path: '/',
     });
   }
 }
