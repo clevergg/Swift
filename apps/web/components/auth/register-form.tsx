@@ -44,6 +44,7 @@ export function RegisterForm() {
         password: data.password,
         name: data.name,
       };
+
       const res = await api.post<AuthResponse>('/auth/register', payload, { skipAuth: true });
       login(res);
       router.push('/');
