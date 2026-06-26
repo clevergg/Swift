@@ -12,9 +12,8 @@ import { z } from 'zod';
 import { PillButton } from '@/components/ui/pill-button';
 import { TextField } from '@/components/ui/text-field';
 import { api, ApiException } from '@/lib/api';
+import { useAuth } from '@/lib/auth-store';
 
-// Расширяем серверную RegisterSchema полем confirmPassword (только на фронте —
-// бэкенду оно не нужно). refine проверяет, что пароли совпадают.
 const RegisterFormSchema = RegisterSchema.extend({
   confirmPassword: z.string().min(1, 'Повторите пароль'),
 }).refine((data) => data.password === data.confirmPassword, {
@@ -24,10 +23,9 @@ const RegisterFormSchema = RegisterSchema.extend({
 
 type RegisterFormValues = z.infer<typeof RegisterFormSchema>;
 
-// Форма регистрации. Валидация — RegisterSchema из @swift/types (email,
-// пароль 8-72, имя) + фронтовое подтверждение пароля.
 export function RegisterForm() {
   const router = useRouter();
+  const login = useAuth((s) => s.login);
   const [formError, setFormError] = useState<string | null>(null);
 
   const {
@@ -46,8 +44,9 @@ export function RegisterForm() {
         password: data.password,
         name: data.name,
       };
-      const res = await api.post<AuthResponse>('/auth/register', payload);
-      void res;
+
+      const res = await api.post<AuthResponse>('/auth/register', payload, { skipAuth: true });
+      login(res);
       router.push('/');
     } catch (e) {
       if (e instanceof ApiException) {

@@ -73,6 +73,21 @@ export class AuthService {
     };
   }
 
+  // Профиль текущего пользователя. Читаем свежие данные из БД по id из токена,
+  // выбираем только безопасные поля (passwordHash НЕ выбираем).
+  async getMe(
+    userId: string,
+  ): Promise<{ id: string; email: string; name: string; avatarUrl: string | null }> {
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { id: true, email: true, name: true, avatarUrl: true },
+    });
+    if (!user) {
+      throw new UnauthorizedException('Пользователь не найден');
+    }
+    return user;
+  }
+
   async refresh(userId: string, jti: string, email: string): Promise<Tokens> {
     const exists = await this.redisService.refreshTokenExists(userId, jti);
     if (!exists) {
@@ -96,7 +111,7 @@ export class AuthService {
 
     const accessToken = await this.jwtService.signAsync(payload, {
       secret: process.env['JWT_ACCESS_SECRET'],
-      expiresIn: 15 * 60
+      expiresIn: 15 * 60,
     });
 
     const refreshToken = await this.jwtService.signAsync(payload, {

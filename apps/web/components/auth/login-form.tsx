@@ -11,12 +11,12 @@ import { useForm } from 'react-hook-form';
 import { PillButton } from '@/components/ui/pill-button';
 import { TextField } from '@/components/ui/text-field';
 import { api, ApiException } from '@/lib/api';
+import { useAuth } from '@/lib/auth-store';
 
-// Форма входа. Валидация формы — LoginSchema из @swift/types (та же,
-// что валидирует бэкенд). Отправка через нашу api-обёртку.
 export function LoginForm() {
   const router = useRouter();
-  // formError — ошибка от API (неверный логин/пароль и т.д.).
+  const login = useAuth((s) => s.login);
+
   const [formError, setFormError] = useState<string | null>(null);
 
   const {
@@ -27,18 +27,16 @@ export function LoginForm() {
     resolver: zodResolver(LoginSchema),
   });
 
-  // onSubmit вызывается только если форма прошла Zod-валидацию.
   const onSubmit = async (data: LoginDto): Promise<void> => {
     setFormError(null);
     try {
-      const res = await api.post<AuthResponse>('/auth/login', data);
-      // Токен пока просто получаем (полноценное хранение — в #16).
-      // accessToken придёт в res.accessToken. Сейчас редиректим на главную.
-      void res;
+      // skipAuth: login — auth-роут, токена ещё нет, refresh не нужен.
+      const res = await api.post<AuthResponse>('/auth/login', data, { skipAuth: true });
+      // Сохраняем токен и юзера в стор. Теперь сессия живёт.
+      login(res);
       router.push('/');
     } catch (e) {
       if (e instanceof ApiException) {
-        // 401 — неверные данные. Показываем дружелюбное сообщение.
         setFormError(
           e.status === 401 ? 'Неверный email или пароль' : e.error.message,
         );
