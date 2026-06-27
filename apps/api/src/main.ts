@@ -27,9 +27,6 @@ async function bootstrap(): Promise<void> {
     credentials: true, // разрешаем куки (refresh-токен)
   });
 
-  // WebSocket-адаптер ДО app.listen (иначе gateway не поднимется корректно).
-  app.useWebSocketAdapter(new IoAdapter(app));
-
   // Swagger — автодокументация API на /api/docs.
   const swaggerConfig = new DocumentBuilder()
     .setTitle('Swift CRM API')
@@ -44,6 +41,8 @@ async function bootstrap(): Promise<void> {
   // Слушаем на 0.0.0.0, чтобы Render видел сервис извне контейнера.
   const port = process.env['PORT'] ?? process.env['API_PORT'] ?? 3001;
   await app.listen(port, '0.0.0.0');
+
+  app.useWebSocketAdapter(new IoAdapter(app));
 
   const logger = app.get(Logger);
   logger.log(`API запущен на порту ${port}`);
