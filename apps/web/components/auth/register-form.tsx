@@ -4,7 +4,6 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { RegisterSchema, type RegisterDto, type AuthResponse } from '@swift/types';
 import { Mail, Lock, User } from 'lucide-react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
@@ -24,7 +23,6 @@ const RegisterFormSchema = RegisterSchema.extend({
 type RegisterFormValues = z.infer<typeof RegisterFormSchema>;
 
 export function RegisterForm() {
-  const router = useRouter();
   const login = useAuth((s) => s.login);
   const [formError, setFormError] = useState<string | null>(null);
 
@@ -47,7 +45,11 @@ export function RegisterForm() {
 
       const res = await api.post<AuthResponse>('/auth/register', payload, { skipAuth: true });
       login(res);
-      router.push('/');
+      // ВРЕМЕННО (деплой на бесплатном Render): полная навигация вместо
+      // router.push('/'). На холодном старте Render Set-Cookie запаздывает,
+      // router.push уходит раньше, чем middleware видит has_session.
+      // ОТКАТИТЬ после сдачи: вернуть useRouter + router.push('/').
+      window.location.href = '/';
     } catch (e) {
       if (e instanceof ApiException) {
         setFormError(

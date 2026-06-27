@@ -4,7 +4,6 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { LoginSchema, type LoginDto, type AuthResponse } from '@swift/types';
 import { Mail, Lock } from 'lucide-react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 
@@ -14,7 +13,6 @@ import { api, ApiException } from '@/lib/api';
 import { useAuth } from '@/lib/auth-store';
 
 export function LoginForm() {
-  const router = useRouter();
   const login = useAuth((s) => s.login);
 
   const [formError, setFormError] = useState<string | null>(null);
@@ -34,7 +32,13 @@ export function LoginForm() {
       const res = await api.post<AuthResponse>('/auth/login', data, { skipAuth: true });
       // Сохраняем токен и юзера в стор. Теперь сессия живёт.
       login(res);
-      router.push('/');
+      // ВРЕМЕННО (деплой на бесплатном Render): полная навигация вместо
+      // router.push('/'). На холодном старте Render ответ со Set-Cookie
+      // запаздывает, и клиентский router.push успевает уйти на / раньше,
+      // чем middleware увидит has_session -> отбрасывает обратно на /login.
+      // window.location.href делает полный переход, дожидаясь применения
+      // cookie. ОТКАТИТЬ после сдачи: вернуть useRouter + router.push('/').
+      window.location.href = '/';
     } catch (e) {
       if (e instanceof ApiException) {
         setFormError(

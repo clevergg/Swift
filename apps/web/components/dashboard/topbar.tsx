@@ -1,19 +1,20 @@
 'use client';
 
 import { LogOut } from 'lucide-react';
-import { useRouter } from 'next/navigation';
 
 import { useAuth } from '@/lib/auth-store';
 
 // Топбар дашборда: имя пользователя и выход.
 export function Topbar() {
-  const router = useRouter();
   const user = useAuth((s) => s.user);
   const logout = useAuth((s) => s.logout);
 
   const onLogout = async (): Promise<void> => {
     await logout();
-    router.push('/login');
+    // ВРЕМЕННО (деплой Render): полная навигация вместо router.push('/login'),
+    // чтобы middleware гарантированно увидел отсутствие cookie после выхода.
+    // ОТКАТИТЬ после сдачи: вернуть useRouter + router.push('/login').
+    window.location.href = '/login';
   };
 
   // Инициалы для аватара-заглушки.
