@@ -6,8 +6,8 @@ import { Plus } from 'lucide-react';
 import { useState } from 'react';
 
 import { Card } from '@/components/board/card';
-import type { ColumnData } from '@/lib/board-types';
 import { useBoard } from '@/lib/board-store';
+import type { ColumnData } from '@/lib/board-types';
 
 export function Column({ column }: { column: ColumnData }) {
   const addCard = useBoard((s) => s.addCard);

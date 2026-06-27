@@ -15,8 +15,8 @@ import { useState } from 'react';
 
 import { Card } from '@/components/board/card';
 import { Column } from '@/components/board/column';
-import type { BoardData, CardData } from '@/lib/board-types';
 import { useBoard } from '@/lib/board-store';
+import type { BoardData, CardData } from '@/lib/board-types';
 
 export function Board({ board }: { board: BoardData }) {
   const addColumn = useBoard((s) => s.addColumn);
