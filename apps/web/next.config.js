@@ -1,16 +1,20 @@
 /** @type {import('next').NextConfig} */
+
+// URL бэкенда. Локально — localhost:3001. На проде (Vercel) — задаётся через
+// переменную окружения API_URL (полный адрес Render-сервиса без /api).
+// Проксирование через Next позволяет браузеру видеть один origin (домен
+// Vercel), поэтому cookie работают как в dev (sameSite strict), без
+// cross-origin плясок.
+const API_URL = process.env.API_URL ?? 'http://localhost:3001';
+
 const nextConfig = {
   reactStrictMode: true,
-  // Транспилируем пакеты монорепо (они в TS-исходниках, Next их соберёт сам).
   transpilePackages: ['@swift/types'],
-  // Проксируем запросы /api на бэкенд (чтобы не возиться с CORS в dev и
-  // чтобы cookie работали с одного origin). Запросы фронта на /api/* уйдут
-  // на NestJS (localhost:3001).
   async rewrites() {
     return [
       {
         source: '/api/:path*',
-        destination: 'http://localhost:3001/api/:path*',
+        destination: `${API_URL}/api/:path*`,
       },
     ];
   },

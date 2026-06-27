@@ -9,42 +9,48 @@ import { Logger } from 'nestjs-pino';
 import { AppModule } from './app.module';
 import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
 
-
-
 async function bootstrap(): Promise<void> {
   const app = await NestFactory.create(AppModule, { bufferLogs: true });
   app.useLogger(app.get(Logger));
-  app.use(cookieParser()); 
+
+  // За прокси (Render/Vercel) — доверяем заголовкам X-Forwarded-*, иначе
+  // secure-cookie и протокол определяются неверно.
+  app.getHttpAdapter().getInstance().set('trust proxy', 1);
+
+  app.use(cookieParser());
   app.useGlobalFilters(new AllExceptionsFilter());
   app.setGlobalPrefix('api');
+
   const corsOrigins = (process.env['CORS_ORIGINS'] ?? 'http://localhost:3000').split(',');
   app.enableCors({
     origin: corsOrigins,
-    credentials: true, // разрешаем куки (нужно для refresh-токена позже)
+    credentials: true, // разрешаем куки (refresh-токен)
   });
-  
 
-  // Swagger - автодокументация API
-  // Доступна будет на /api/docs.
+  // WebSocket-адаптер ДО app.listen (иначе gateway не поднимется корректно).
+  app.useWebSocketAdapter(new IoAdapter(app));
+
+  // Swagger — автодокументация API на /api/docs.
   const swaggerConfig = new DocumentBuilder()
     .setTitle('Swift CRM API')
     .setDescription('API канбан-CRM платформы Swift')
     .setVersion('0.1.0')
-    .addBearerAuth() // покажет поле для JWT-токена в Swagger UI (пригодится с auth)
+    .addBearerAuth()
     .build();
   const document = SwaggerModule.createDocument(app, swaggerConfig);
-  SwaggerModule.setup('api/docs', app, document)
+  SwaggerModule.setup('api/docs', app, document);
 
-  const port = process.env['API_PORT'] ?? 3001;
-  await app.listen(port);
-  app.useWebSocketAdapter(new IoAdapter(app));
+  // PORT — переменная, которую задаёт Render. Локально — API_PORT. Фолбэк 3001.
+  // Слушаем на 0.0.0.0, чтобы Render видел сервис извне контейнера.
+  const port = process.env['PORT'] ?? process.env['API_PORT'] ?? 3001;
+  await app.listen(port, '0.0.0.0');
+
   const logger = app.get(Logger);
-  logger.log(`API запущен на http://localhost:${port}`);
-  logger.log(`Swagger доступен на http://localhost:${port}/api/docs`);
+  logger.log(`API запущен на порту ${port}`);
+  logger.log(`Swagger доступен на /api/docs`);
 }
 
 bootstrap().catch((err) => {
-   
   console.error('Ошибка запуска приложения:', err);
   process.exit(1);
 });
